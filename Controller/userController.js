@@ -1,107 +1,48 @@
+const User = require('../models/userModel');
 
-// Données isolées dans le contrôleur (en mémoire pour cette séance)
-const {estNonVide,estEmailValide} = require('../utils/validators');
-
-let users = [
-    { id: 1, name: 'Bienvenue sur le blog', email: 'Admin', role: 'Admin' },
-    { id: 2, name: 'Bienvenue sur le blog', email: 'Admin', role: 'Admin' }, 
-];
-
-let prochainId = 3;
-
-// 1. Récupérer tous les utilisateurs (avec filtre optionnel ?role=...)
-const getAllUsers = (req, res) => {
-    const { role } = req.query;
-
-    let resultat = users;
-
-    if (role) {
-        resultat = users.filter(a => a.role === role);
+// 1. Create a new user (POST /api/users)
+const createUser = async (req, res) => {
+  try {
+    const { name, email, age, role } = req.body;
+    if (!name || !email) {
+      return res.status(400).json({ message: 'Name and email are required' });
     }
-
-    res.status(200).json({
-        total: resultat.length,
-        users: resultat
-    });
+    // Check for duplicate email
+    const exists = await User.findOne({ email });
+    if (exists) {
+      return res.status(409).json({ message: 'Email already in use' });
+    }
+    const user = await User.create({ name, email, age, role });
+    res.status(201).json(user);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };
 
-// 2. Récupérer un utilisateur par son ID unique
+// 2. Retrieve all users (GET /api/users)
+const getUsers = async (req, res) => {
+  try {
+    const users = await User.find();
+    res.status(200).json(users);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
 
-const getUserById = (req, res) => {
-    const id = Number(req.params.id);
-    const user = users.find(a => a.id === id);
-
+// 3. Retrieve user by ID (GET /api/users/:id)
+const getUserById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
     if (!user) {
-        return res.status(404).json({
-            error: `Utilisateur ${id} introuvable`
-        });
+      return res.status(404).json({ message: 'User not found' });
     }
-
     res.status(200).json(user);
+  }catch(err) {
+    res.status(500).json({ message: err.message });
+  }
 };
-
-// 3. Créer un nouvel article
-const createUser = (req, res) => {
-
-    const { name, email,role } = req.body;
-     if (!estNonVide(name) ) {
-        return res.status(400).json({
-            error: "le nom est obligatoire"
-        });
-    }
-
-
-    if (!estEmailValide(email) ) {
-        return res.status(400).json({
-            error: "l email  est obligatoire"
-        });
-    }
-
-    const nouveluser = {
-        id: prochainId++,
-        name,
-        email,
-        role
-    };
-
-    users.push(nouveluser);
-
-    res.status(201).json({
-        message: 'utilisateur créé',
-        user: nouveluser
-    });
-};
-
-
-
-
-// 5. Supprimer un article (DELETE /api/articles/:id)
-const deleteUser = (req, res) => {
-    const id = Number(req.params.id);
-
-    const userExiste = users.some(a => a.id === id);
-
-    if (!userExiste) {
-        return res.status(404).json({
-            error: `Impossible de supprimer : utilisateur ${id} introuvable`
-        });
-    }
-
-    // On filtre pour ne garder que les articles ayant un ID différent
-    users = users.filter(a => a.id !== id);
-
-    res.status(200).json({
-        message: `utilisateur ${id} supprimé avec succès`
-    });
-};
-
-
-
-
 module.exports = {
-    getAllUsers,
-    getUserById,
-    createUser,
-    deleteUser
+  createUser,
+  getUsers,
+  getUserById
 };
-
