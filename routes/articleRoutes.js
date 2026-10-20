@@ -1,20 +1,23 @@
-
 const express = require('express');
 const router = express.Router();
 
-const articleController = require('../Controller/articleController');
+const {
+  getAllArticles,
+  getArticleById,
+  createArticle,
+  updateArticle,
+  deleteArticle
+} = require('../controllers/articleController');
 
-// Remarque capitale : le préfixe '/api/articles' sera défini dans server.js.
-// Ici, '/' représente donc la racine de la ressource : '/api/articles' !
+const { protect } = require('../middlewares/authMiddleware');
 
-router.get('/', articleController.getAllArticles);
+// Public read routes
+router.get('/', getAllArticles);
+router.get('/:id', getArticleById);
 
-router.get('/:id', articleController.getArticleById);
-
-router.post('/', articleController.createArticle);
-
-router.put('/:id', articleController.updateArticle) ;
-
-router.delete('/:id', articleController.deleteArticle) ;
+// Protected write operations
+router.post('/', protect, createArticle);
+router.put('/:id', protect, updateArticle);
+router.delete('/:id', protect, deleteArticle);
 
 module.exports = router;

@@ -1,16 +1,23 @@
-
 const express = require('express');
 const router = express.Router();
-const userController = require('../Controller/userController');
 
-// Remarque capitale : le préfixe '/api/articles' sera défini dans server.js.
-// Ici, '/' représente donc la racine de la ressource : '/api/articles' !
+const {
+  registerUser,
+  loginUser,
+  getUserProfile,
+  getAllUsers
+} = require('../controllers/userController');
 
-router.get('/', userController.getUsers);
-router.get('/:id', userController.getUserById);
+const { protect, adminOnly } = require('../middlewares/authMiddleware');
 
-router.post('/', userController.createUser);
+// Public authentication routes
+router.post('/register', registerUser);
+router.post('/login', loginUser);
 
+// Private profile route protected by JWT
+router.get('/profile', protect, getUserProfile);
+
+// Administrator-only route (valid JWT + admin role)
+router.get('/', protect, adminOnly, getAllUsers);
 
 module.exports = router;
-
